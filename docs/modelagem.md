@@ -91,6 +91,8 @@ Numeração sequencial por estabelecimento/dia exige consultar o que já foi emi
 
 "Não pode haver dois produtos com o mesmo nome neste estabelecimento" não é verificável por um `Produto` — ele não vê os irmãos. Também porta no domínio, adapter na persistência.
 
+Este é o único ponto do domínio em que uma porta é consumida **dentro** de um método de agregado, o que é o padrão que Vernon recomenda: passar o domain service como parâmetro do método, em vez de injetá-lo no construtor. A consequência honesta é que `Produto.CadastrarAsync` e `Produto.RenomearAsync` são assíncronos, porque a verificação toca o banco. `RenomearAsync` passa o próprio `ProdutoId` no parâmetro `ignorando`, senão o produto colidiria consigo mesmo.
+
 ### O que **não** justifica domain service
 
 Tudo que o agregado consegue decidir sozinho. `Confirmar`, `AdicionarItem`, `CancelarItem`, cálculo de `Subtotal`/`Total` — tudo método de `Pedido`, porque toda a informação necessária está dentro da fronteira. Extrair isso para um `PedidoService` produziria exatamente o modelo anêmico que o exercício quer evitar.

@@ -47,18 +47,23 @@ src/Restaurant.Domain/
 │
 ├── SharedKernel/                        ← negócio compartilhado entre contextos
 │   ├── Tenancy/
-│   │   └── ITenantScoped.cs             todo aggregate root implementa
+│   │   ├── ITenantScoped.cs             todo aggregate root implementa
+│   │   └── ITenantRoot.cs               só Estabelecimento: ele *e* o tenant
 │   ├── Identifiers/                     IDs de agregados de outros contextos
 │   │   ├── EstabelecimentoId.cs         FuncionarioId.cs   MesaId.cs
 │   │   └── ProdutoId.cs                 CategoriaId.cs
 │   ├── ValueObjects/
 │   │   ├── Dinheiro.cs                  Percentual.cs      Cnpj.cs
-│   │   └── Email.cs                     Telefone.cs        NomePessoa.cs
+│   │   ├── Email.cs                     Telefone.cs        NomePessoa.cs
+│   │   └── Endereco.cs                  Cep.cs
 │   └── Enumerations/
 │       └── Moeda.cs
 │
 └── BoundedContexts/                     ← negócio de um contexto só
-    └── Pedidos/
+    ├── Contas/                          Estabelecimento (tenant), Funcionario
+    ├── Cardapio/                        Produto, Categoria
+    ├── Salao/                           Mesa
+    └── Pedidos/                         o core, detalhado abaixo
         ├── PedidoAggregate/
         │   ├── Pedido.cs                raiz do agregado
         │   ├── ItemPedido.cs            entidade filha
@@ -165,23 +170,29 @@ Cada teste foi validado por **mutação**: quebrar a regra de propósito e confi
 
 ## Como escala
 
-Os próximos contextos não inventam formato novo:
+Os outros três contextos seguiram o mesmo formato, sem inventar nada:
 
 ```
 BoundedContexts/Cardapio/
-├── ProdutoAggregate/       Produto + seus VOs, enums, eventos
-├── CategoriaAggregate/     Categoria
-└── Ports/                  IProdutoRepository, IVerificadorDeNomeUnicoDeProduto
+├── ProdutoAggregate/       Produto + VOs, DisponibilidadeProduto, 6 eventos
+├── CategoriaAggregate/     Categoria + NomeDeCategoria, 3 eventos
+└── Ports/                  IProdutoRepository, ICategoriaRepository,
+                            IVerificadorDeNomeUnicoDeProduto
 
 BoundedContexts/Salao/
-├── MesaAggregate/          Mesa
+├── MesaAggregate/          Mesa + NumeroDaMesa, StatusMesa, 4 eventos
 └── Ports/                  IMesaRepository
 
 BoundedContexts/Contas/
-├── EstabelecimentoAggregate/
-├── FuncionarioAggregate/
-└── Ports/
+├── EstabelecimentoAggregate/   Estabelecimento (ITenantRoot) + NomeFantasia, 3 eventos
+├── FuncionarioAggregate/       Funcionario + Cargo, 3 eventos
+└── Ports/                      IEstabelecimentoRepository, IFuncionarioRepository,
+                                IVerificadorDeCnpjUnico
 ```
+
+Os sete testes de convenção **não precisaram de uma linha de alteração** para absorver os três contextos novos, que é exatamente o que se espera deles.
+
+Uma exceção nasceu junto: `Estabelecimento` **é** o tenant, então não faz sentido implementar `ITenantScoped` apontando para si mesmo. Em vez de esconder isso numa lista de exclusão no teste, criamos o marcador `ITenantRoot`, e a regra virou "todo agregado é `ITenantScoped` **ou** `ITenantRoot`". A exceção fica documentada no tipo.
 
 Quando um contexto crescer a ponto de justificar isolamento de compilação, ele vira projeto próprio (`Restaurant.Pedidos.Domain`) — a estrutura interna não muda, só sobe um nível. Hoje contextos são pastas porque 8 projetos são gerenciáveis e 20 não.
 

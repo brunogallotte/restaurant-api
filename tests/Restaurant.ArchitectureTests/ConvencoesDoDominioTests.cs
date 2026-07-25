@@ -101,10 +101,18 @@ public sealed class ConvencoesDoDominioTests
     }
 
     [Fact]
-    public void Todo_agregado_e_escopado_por_tenant() =>
+    public void Todo_agregado_e_escopado_por_tenant_ou_e_o_proprio_tenant() =>
         TiposDoDominio()
             .Where(tipo => typeof(IAggregateRoot).IsAssignableFrom(tipo))
-            .Should().AllSatisfy(agregado => typeof(ITenantScoped).IsAssignableFrom(agregado).Should().BeTrue());
+            .Should().AllSatisfy(agregado =>
+                (typeof(ITenantScoped).IsAssignableFrom(agregado) || typeof(ITenantRoot).IsAssignableFrom(agregado))
+                    .Should().BeTrue());
+
+    [Fact]
+    public void Existe_um_unico_tenant_root() =>
+        TiposDoDominio()
+            .Where(tipo => typeof(ITenantRoot).IsAssignableFrom(tipo))
+            .Should().HaveCount(1);
 
     [Fact]
     public void Repositorios_sao_declarados_no_dominio() =>

@@ -212,4 +212,48 @@ public bool EhFinal => this == Fechado || this == Cancelado;
 
 Status novo entra em **um** arquivo. Bônus: persiste legível no banco (`"EmPreparo"`, não `3`) e `Todos` permite varrer o conjunto nos testes — é assim que `Status_finais_nao_tem_saida` prova que `Fechado` e `Cancelado` não têm saída *para nenhum* destino, sem enumerar à mão.
 
-Custo: reflection na primeira leitura de `Todos`/`DeValor`, mitigado por `Lazy<FrozenDictionary>`. E os analisadores reclamam (`CA1000`, `CA1711`), suprimidos só em `Domain/Abstractions` com o motivo registrado no `CLAUDE.md`.
+Custo: reflection na primeira leitura de `Todos`/`DeValor`, mitigado por `Lazy<FrozenDictionary>`. E os analisadores reclamam (`CA1000`, `CA1711`), suprimidos só em `Domain/BuildingBlocks` com o motivo registrado no `CLAUDE.md`.
+
+---
+
+## 9. Por que as pastas são assim
+
+A estrutura de pastas não é organização cosmética — cada nível responde a uma pergunta diferente do desenho.
+
+### Os três níveis de topo separam por *conhecimento*
+
+| Pasta | O que sabe |
+|---|---|
+| `BuildingBlocks/` | **nada** de negócio. `Entity`, `Result`, `SmartEnum` funcionariam num sistema bancário sem uma linha alterada — poderia virar um NuGet |
+| `SharedKernel/` | negócio **compartilhado** entre contextos: `Dinheiro`, `Cnpj`, `EstabelecimentoId` |
+| `BoundedContexts/` | negócio **de um contexto só** |
+
+A fronteira entre a primeira e a segunda é a que mais escorrega. Na primeira versão, `ITenantScoped` estava em `Abstractions/` e importava `EstabelecimentoId` — ou seja, os "blocos genéricos" conheciam um conceito deste projeto. Mover `ITenantScoped` para `SharedKernel/Tenancy/` restaurou a separação, e `BuildingBlocks_nao_conhece_negocio` impede a regressão.
+
+### Dentro do contexto, o agregado é a unidade
+
+`PedidoAggregate/` agrupa a raiz, a entidade filha, os IDs, enums, VOs e eventos **daquele** agregado. Isso responde a uma pergunta que a organização por tipo não responde: em `Cardapio`, com `Produto` e `Categoria`, de quem é o VO `NomeDeProduto`? Agrupando por agregado, a resposta está no caminho do arquivo.
+
+`Policies/` e `Ports/` ficam **fora** do agregado, no nível do contexto, porque não pertencem a um agregado específico — `PoliticaDePrioridade` é política do contexto, e as portas são contratos que a infraestrutura implementa.
+
+### Por que `PedidoAggregate/` e não `Pedido/`
+
+`Aggregates/Pedido/` produziria o namespace `...Aggregates.Pedido` contendo a classe `Pedido` — classe com o mesmo nome do namespace que a contém. Gera ambiguidade de resolução de nome e a Microsoft desaconselha. É a mesma armadilha que evitamos chamando o tenant de `Estabelecimento` em vez de `Restaurant`.
+
+### Um tipo por arquivo, namespaces alinhados
+
+Os 12 domain events viviam em `PedidoDomainEvents.cs`; agora são 12 arquivos. Não é purismo: você acha `PedidoConfirmadoDomainEvent` pelo nome do arquivo, e o diff do git aponta exatamente qual evento mudou.
+
+Namespaces batem 1:1 com as pastas — sem suprimir `IDE0130`. O efeito colateral é bom: `Pedido.cs` declara 10 `using`, e essa lista **é** a documentação de quais blocos ele toca. Dá para ver de relance que ele usa `SharedKernel` e nenhum outro contexto.
+
+### Erro mora com a regra que o produz
+
+`Dinheiro.Negativo`, `Cnpj.DigitoVerificadorInvalido`, `Quantidade.ForaDaFaixa` — cada VO declara os próprios erros. Antes havia uma classe central `CompartilhadoErrors` para metade dos VOs enquanto a outra metade já declarava os seus; duas convenções brigando.
+
+`PedidoErrors` continua central e isso é coerente: `SemItens`, `ItensPendentes`, `TransicaoInvalida` são invariantes **do agregado**, não de um tipo isolado — não há um único dono natural.
+
+### A convenção é teste, não disciplina
+
+Sete testes em `ConvencaoDePastasTests` travam tudo acima. O detalhe que os torna úteis é a **direção inversa**: não basta "todo tipo em `ValueObjects/` é um `ValueObject`" — também vale "todo `ValueObject` está em `ValueObjects/`". Sem isso, criar um VO no lugar errado passaria despercebido; com isso, a pasta é a *definição* do que ela contém.
+
+Cada um foi validado por mutação — quebrar a regra de propósito e confirmar que o teste reprova. Vale o método: o primeiro deles passava vacuamente, porque a varredura filtrava só classes concretas e a violação que eu plantei estava numa **interface**. Teste de arquitetura que nunca viu falhar não prova nada.

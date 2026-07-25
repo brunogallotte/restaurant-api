@@ -1,5 +1,7 @@
-using Restaurant.Domain.Compartilhado;
-using Restaurant.Domain.Pedidos.ValueObjects;
+using Restaurant.Domain.BoundedContexts.Pedidos.PedidoAggregate.ValueObjects;
+using Restaurant.Domain.SharedKernel.Enumerations;
+using Restaurant.Domain.SharedKernel.Identifiers;
+using Restaurant.Domain.SharedKernel.ValueObjects;
 
 namespace Restaurant.Domain.UnitTests.Builders;
 

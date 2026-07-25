@@ -5,7 +5,7 @@ namespace Restaurant.ArchitectureTests;
 
 public sealed class RegraDeDependenciaTests
 {
-    private static readonly Assembly Domain = typeof(Domain.Abstractions.Entity<>).Assembly;
+    private static readonly Assembly Domain = typeof(Domain.BuildingBlocks.Model.Entity<>).Assembly;
     private static readonly Assembly Application = typeof(Application.DependencyInjection).Assembly;
     private static readonly Assembly Persistence = typeof(Persistence.DependencyInjection).Assembly;
     private static readonly Assembly Infrastructure = typeof(Infrastructure.DependencyInjection).Assembly;

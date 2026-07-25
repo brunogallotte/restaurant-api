@@ -1,6 +1,8 @@
 using System.Reflection;
 using AwesomeAssertions;
-using Restaurant.Domain.Abstractions;
+using Restaurant.Domain.BuildingBlocks.Events;
+using Restaurant.Domain.BuildingBlocks.Model;
+using Restaurant.Domain.SharedKernel.Tenancy;
 
 namespace Restaurant.ArchitectureTests;
 

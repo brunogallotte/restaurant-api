@@ -79,6 +79,14 @@ dotnet ef migrations add <Nome> -p src/Restaurant.Persistence -s src/Restaurant.
 dotnet ef database update -p src/Restaurant.Persistence -s src/Restaurant.Api
 ```
 
+## Commits
+
+O repositorio segue Conventional Commits, validado por um hook em `.githooks/commit-msg`. Apos clonar, ative com:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Testes
 
 ```bash

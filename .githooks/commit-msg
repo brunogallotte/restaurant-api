@@ -1,0 +1,33 @@
+#!/bin/sh
+
+tipos='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+padrao="^($tipos)(\([a-z0-9-]+\))?!?: .{1,72}$"
+
+primeira_linha=$(head -1 "$1")
+
+case "$primeira_linha" in
+    "Merge "*|"Revert "*|fixup!*|squash!*) exit 0 ;;
+esac
+
+if echo "$primeira_linha" | grep -qE "$padrao"; then
+    exit 0
+fi
+
+cat >&2 <<EOF
+
+Subject fora do padrao Conventional Commits.
+
+  recebido: $primeira_linha
+
+  formato:  <tipo>(<escopo opcional>): <descricao ate 72 caracteres>
+  tipos:    $(echo "$tipos" | tr '|' ' ')
+
+  exemplos:
+    feat(domain): adiciona o agregado Comanda
+    refactor(persistence): extrai o interceptor de domain events
+    docs: atualiza o glossario da ubiquitous language
+    chore: atualiza o EF Core para 10.0.11
+
+EOF
+
+exit 1

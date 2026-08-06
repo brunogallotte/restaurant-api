@@ -292,6 +292,12 @@ Consequência prática: o painel de pedidos funciona **sem job de atualização*
 
 **Exceção deliberada:** `PedidoFechadoDomainEvent` carrega `Subtotal`, `TaxaDeServico` e `Total` como valores. Ali o número precisa ser congelado: é o registro fiscal do que foi cobrado, não uma projeção.
 
+A regra "o relógio congela em `FechadoEm`" saiu de dentro de `Pedido.TempoDecorrido` para `PoliticaDePrioridade.Decorrido(abertoEm, fechadoEm, agora)` quando a Application chegou: o read side calcula prioridade efetiva **sem carregar o agregado**, logo precisa da regra sem ter a quem perguntar. `Pedido.TempoDecorrido` passou a delegar, então a regra continua com um dono único.
+
+O cálculo acontece no **handler de query**, não no adapter de persistência. Três razões: a política continua testável com `FakeTimeProvider` no nível do caso de uso; o SQL fica determinístico, sem `now()`; e a ordenação do painel depende da prioridade efetiva, logo só pode acontecer depois do cálculo.
+
+**Gap conhecido — fuso horário.** `AbrirPedido` gera o número do dia com `DateOnly.FromDateTime(agora.UtcDateTime)`, o que coloca a virada do dia em UTC. Um restaurante que fecha às 2h da manhã vai ver o sequencial virar no meio do expediente. `Estabelecimento` não tem fuso modelado ainda; quando tiver, é nesse handler que ele entra.
+
 ---
 
 ## 8. Recursos .NET / C# usados e para quê

@@ -6,6 +6,14 @@ namespace Restaurant.Domain.BoundedContexts.Pedidos.PedidoAggregate;
 
 public static class PedidoErrors
 {
+    public static readonly Error NaoEncontrado = Error.NaoEncontrado(
+        "Pedido.NaoEncontrado",
+        "Pedido nao encontrado.");
+
+    public static readonly Error MesaJaTemPedidoAberto = Error.ConflitoDeEstado(
+        "Pedido.MesaJaTemPedidoAberto",
+        "Mesa ja possui um pedido em andamento.");
+
     public static readonly Error SemItens = Error.ConflitoDeEstado(
         "Pedido.SemItens",
         "Pedido sem itens nao pode ser confirmado.");

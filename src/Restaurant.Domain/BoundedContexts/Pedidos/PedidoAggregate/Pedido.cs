@@ -2,6 +2,7 @@ using Restaurant.Domain.BoundedContexts.Pedidos.PedidoAggregate.Enumerations;
 using Restaurant.Domain.BoundedContexts.Pedidos.PedidoAggregate.Events;
 using Restaurant.Domain.BoundedContexts.Pedidos.PedidoAggregate.Identifiers;
 using Restaurant.Domain.BoundedContexts.Pedidos.PedidoAggregate.ValueObjects;
+using Restaurant.Domain.BoundedContexts.Pedidos.Policies;
 using Restaurant.Domain.BuildingBlocks.Model;
 using Restaurant.Domain.BuildingBlocks.Results;
 using Restaurant.Domain.SharedKernel.Enumerations;
@@ -383,7 +384,8 @@ public sealed class Pedido : AggregateRoot<PedidoId>, ITenantScoped
         return Result.Success();
     }
 
-    public TimeSpan TempoDecorrido(DateTimeOffset agora) => (FechadoEm ?? agora) - AbertoEm;
+    public TimeSpan TempoDecorrido(DateTimeOffset agora) =>
+        PoliticaDePrioridade.Decorrido(AbertoEm, FechadoEm, agora);
 
     private bool TodosOsItensAtivosEstaoProntos() => ItensAtivos.All(item => item.EstaPronto);
 

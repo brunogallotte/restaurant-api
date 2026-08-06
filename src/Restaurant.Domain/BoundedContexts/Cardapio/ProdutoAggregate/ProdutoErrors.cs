@@ -4,6 +4,14 @@ namespace Restaurant.Domain.BoundedContexts.Cardapio.ProdutoAggregate;
 
 public static class ProdutoErrors
 {
+    public static readonly Error NaoEncontrado = Error.NaoEncontrado(
+        "Produto.NaoEncontrado",
+        "Produto nao encontrado.");
+
+    public static readonly Error NaoPodeEntrarEmPedido = Error.ConflitoDeEstado(
+        "Produto.NaoPodeEntrarEmPedido",
+        "Produto indisponivel nao pode ser adicionado ao pedido.");
+
     public static readonly Error Descontinuado = Error.ConflitoDeEstado(
         "Produto.Descontinuado",
         "Produto descontinuado nao aceita alteracoes.");

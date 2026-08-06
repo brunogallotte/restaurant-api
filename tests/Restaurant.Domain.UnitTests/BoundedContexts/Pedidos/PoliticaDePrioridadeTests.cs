@@ -57,6 +57,38 @@ public sealed class PoliticaDePrioridadeTests
     }
 
     [Fact]
+    public void Decorrido_de_pedido_em_andamento_acompanha_o_relogio()
+    {
+        var decorrido = PoliticaDePrioridade.Decorrido(
+            Abertura,
+            fechadoEm: null,
+            Abertura.AddMinutes(25));
+
+        decorrido.Should().Be(TimeSpan.FromMinutes(25));
+    }
+
+    [Fact]
+    public void Decorrido_de_pedido_fechado_congela_no_fechamento()
+    {
+        var decorrido = PoliticaDePrioridade.Decorrido(
+            Abertura,
+            Abertura.AddMinutes(40),
+            Abertura.AddHours(3));
+
+        decorrido.Should().Be(TimeSpan.FromMinutes(40));
+    }
+
+    [Fact]
+    public void TempoDecorrido_do_agregado_concorda_com_a_politica()
+    {
+        var pedido = PedidoBuilder.Um().ComItem().AbertoEm(Abertura).ConstruirFechado();
+        var agora = Abertura.AddHours(3);
+
+        pedido.TempoDecorrido(agora).Should().Be(
+            PoliticaDePrioridade.Decorrido(pedido.AbertoEm, pedido.FechadoEm, agora));
+    }
+
+    [Fact]
     public void Politica_com_limites_invertidos_e_rejeitada_na_construcao()
     {
         var acao = () => new PoliticaDePrioridade(TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(10));

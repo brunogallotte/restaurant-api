@@ -4,6 +4,10 @@ namespace Restaurant.Domain.BoundedContexts.Cardapio.CategoriaAggregate;
 
 public static class CategoriaErrors
 {
+    public static readonly Error NaoEncontrada = Error.NaoEncontrado(
+        "Categoria.NaoEncontrada",
+        "Categoria nao encontrada.");
+
     public static readonly Error Desativada = Error.ConflitoDeEstado(
         "Categoria.Desativada",
         "Categoria desativada nao aceita alteracoes.");

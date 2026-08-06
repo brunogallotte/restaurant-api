@@ -5,6 +5,10 @@ namespace Restaurant.Domain.BoundedContexts.Salao.MesaAggregate;
 
 public static class MesaErrors
 {
+    public static readonly Error NaoEncontrada = Error.NaoEncontrado(
+        "Mesa.NaoEncontrada",
+        "Mesa nao encontrada.");
+
     public static readonly Error LugaresInvalidos = Error.Validacao(
         "Mesa.LugaresInvalidos",
         "Mesa deve ter ao menos um lugar.");

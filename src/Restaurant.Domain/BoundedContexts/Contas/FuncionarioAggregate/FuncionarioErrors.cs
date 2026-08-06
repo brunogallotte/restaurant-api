@@ -4,6 +4,10 @@ namespace Restaurant.Domain.BoundedContexts.Contas.FuncionarioAggregate;
 
 public static class FuncionarioErrors
 {
+    public static readonly Error NaoEncontrado = Error.NaoEncontrado(
+        "Funcionario.NaoEncontrado",
+        "Funcionario nao encontrado.");
+
     public static readonly Error Desligado = Error.ConflitoDeEstado(
         "Funcionario.Desligado",
         "Funcionario desligado nao aceita alteracoes.");

@@ -25,6 +25,9 @@ public sealed class PoliticaDePrioridade
 
     public TimeSpan LimiteParaUrgente { get; }
 
+    public static TimeSpan Decorrido(DateTimeOffset abertoEm, DateTimeOffset? fechadoEm, DateTimeOffset agora) =>
+        (fechadoEm ?? agora) - abertoEm;
+
     public PrioridadePedido Calcular(PrioridadePedido prioridadeManual, TimeSpan decorrido, StatusPedido status)
     {
         if (status.EhFinal)

@@ -6,9 +6,15 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Restaurant.Application.UnitTests" />
+    <InternalsVisibleTo Include="Restaurant.ArchitectureTests" />
   </ItemGroup>
 
   <PropertyGroup>

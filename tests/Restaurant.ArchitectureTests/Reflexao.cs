@@ -33,7 +33,11 @@ internal static class Reflexao
             .Select(parametro => parametro.ParameterType)
             .SelectMany(Desembrulhar);
 
-    public static IEnumerable<Type> TiposReferenciadosPor(Type tipo, Assembly assembly)
+    public static IEnumerable<Type> TiposReferenciadosPor(Type tipo, Assembly assembly) =>
+        TiposNaAssinaturaDe(tipo, assembly).Concat(
+            TiposDeVariaveisLocais(tipo).Where(referencia => referencia.Assembly == assembly)).Distinct();
+
+    public static IEnumerable<Type> TiposNaAssinaturaDe(Type tipo, Assembly assembly)
     {
         var deBase = tipo.BaseType is null ? [] : new[] { tipo.BaseType };
         var deInterfaces = tipo.GetInterfaces();
@@ -44,7 +48,6 @@ internal static class Reflexao
                 .Select(parametro => parametro.ParameterType)
                 .Append(metodo.ReturnType));
         var deConstrutores = TiposDeParametrosDeConstrutor(tipo);
-        var deVariaveisLocais = TiposDeVariaveisLocais(tipo);
 
         return deBase
             .Concat(deInterfaces)
@@ -52,7 +55,6 @@ internal static class Reflexao
             .Concat(dePropriedades)
             .Concat(deMetodos)
             .Concat(deConstrutores)
-            .Concat(deVariaveisLocais)
             .SelectMany(Desembrulhar)
             .Where(referencia => referencia.Assembly == assembly)
             .Distinct();

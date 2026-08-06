@@ -13,6 +13,7 @@ public sealed class ConvencaoDePastasDaApplicationTests
     private const string BoundedContexts = $"{Raiz}.BoundedContexts";
 
     private static readonly Assembly Application = typeof(DependencyInjection).Assembly;
+    private static readonly Assembly Dominio = typeof(Restaurant.Domain.BuildingBlocks.Model.Entity<>).Assembly;
 
     [Fact]
     public void Abstractions_nao_conhece_negocio()
@@ -66,6 +67,32 @@ public sealed class ConvencaoDePastasDaApplicationTests
     }
 
     [Fact]
+    public void Pasta_EventHandlers_contem_exatamente_os_notification_handlers()
+    {
+        var naPasta = TiposDaApplication().Where(tipo => Reflexao.TerminaEm(tipo, "EventHandlers")).ToList();
+        var reacoes = TiposDaApplication()
+            .Where(tipo => Reflexao.Implementa(tipo, typeof(INotificationHandler<>)))
+            .ToList();
+
+        naPasta.Should().NotBeEmpty();
+        naPasta.Should().BeEquivalentTo(reacoes);
+    }
+
+    [Fact]
+    public void Assinatura_de_um_contexto_so_menciona_Events_Ports_ou_Identifiers_de_outro()
+    {
+        var vazamentos = TiposDaApplication()
+            .Where(tipo => Reflexao.EstaEm(tipo, BoundedContexts))
+            .SelectMany(tipo => Reflexao.TiposNaAssinaturaDe(tipo, Dominio)
+                .Where(EhDeContextoDoDominio)
+                .Where(referencia => NomeDoContexto(referencia) != NomeDoContexto(tipo))
+                .Where(referencia => !EhAcoplamentoPermitido(referencia))
+                .Select(referencia => $"{tipo.Name} -> {referencia.FullName}"));
+
+        vazamentos.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Todo_caso_de_uso_mora_dentro_de_um_contexto()
     {
         var forasteiros = Requests()
@@ -113,6 +140,17 @@ public sealed class ConvencaoDePastasDaApplicationTests
 
     private static bool EhRequest(Type tipo) =>
         typeof(ICommandBase).IsAssignableFrom(tipo) || Reflexao.Implementa(tipo, typeof(IQuery<>));
+
+    private static bool EhDeContextoDoDominio(Type tipo) =>
+        Reflexao.EstaEm(tipo, "Restaurant.Domain.BoundedContexts");
+
+    private static bool EhAcoplamentoPermitido(Type tipo) =>
+        Reflexao.TerminaEm(tipo, "Events")
+        || Reflexao.TerminaEm(tipo, "Ports")
+        || Reflexao.TerminaEm(tipo, "Identifiers");
+
+    private static string NomeDoContexto(Type tipo) =>
+        tipo.Namespace!.Split('.').ElementAtOrDefault(3) ?? string.Empty;
 
     private static bool EhRecord(Type tipo) =>
         tipo.GetMethod("PrintMembers", BindingFlags.NonPublic | BindingFlags.Instance) is not null;

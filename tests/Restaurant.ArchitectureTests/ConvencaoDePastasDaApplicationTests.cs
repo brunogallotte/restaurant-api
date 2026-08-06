@@ -39,6 +39,33 @@ public sealed class ConvencaoDePastasDaApplicationTests
     }
 
     [Fact]
+    public void Pasta_Ports_so_tem_interface()
+    {
+        var naPasta = Reflexao.TiposEscritosPorHumano(Application)
+            .Where(tipo => Reflexao.TerminaEm(tipo, "Ports"))
+            .ToList();
+
+        naPasta.Should().NotBeEmpty();
+        naPasta.Should().AllSatisfy(tipo => tipo.IsInterface.Should().BeTrue());
+    }
+
+    [Fact]
+    public void Pasta_Contracts_so_tem_record_sem_comportamento()
+    {
+        var naPasta = Reflexao.TiposEscritosPorHumano(Application)
+            .Where(tipo => Reflexao.TerminaEm(tipo, "Contracts"))
+            .ToList();
+
+        naPasta.Should().NotBeEmpty();
+        naPasta.Should().AllSatisfy(tipo =>
+        {
+            EhRecord(tipo).Should().BeTrue($"{tipo.Name} deve ser record");
+            tipo.IsSealed.Should().BeTrue($"{tipo.Name} deve ser sealed");
+            MetodosProprios(tipo).Should().BeEmpty($"{tipo.Name} e dado, nao comportamento");
+        });
+    }
+
+    [Fact]
     public void Todo_caso_de_uso_mora_dentro_de_um_contexto()
     {
         var forasteiros = Requests()
@@ -86,6 +113,16 @@ public sealed class ConvencaoDePastasDaApplicationTests
 
     private static bool EhRequest(Type tipo) =>
         typeof(ICommandBase).IsAssignableFrom(tipo) || Reflexao.Implementa(tipo, typeof(IQuery<>));
+
+    private static bool EhRecord(Type tipo) =>
+        tipo.GetMethod("PrintMembers", BindingFlags.NonPublic | BindingFlags.Instance) is not null;
+
+    private static IEnumerable<string> MetodosProprios(Type tipo) =>
+        tipo.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Where(metodo => !metodo.IsSpecialName)
+            .Where(metodo => !metodo.Name.Contains('<', StringComparison.Ordinal))
+            .Where(metodo => metodo.Name is not ("Equals" or "GetHashCode" or "ToString" or "Deconstruct"))
+            .Select(metodo => metodo.Name);
 
     private static string SemSufixo(string nome) =>
         nome.Replace("Command", string.Empty, StringComparison.Ordinal)

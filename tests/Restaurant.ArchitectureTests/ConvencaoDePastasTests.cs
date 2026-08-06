@@ -96,22 +96,15 @@ public sealed class ConvencaoDePastasTests
         naPasta.Should().AllSatisfy(tipo => tipo.IsInterface.Should().BeTrue());
     }
 
-    private static IEnumerable<Type> TodosOsTipos() => Domain.GetTypes().Where(EscritoPorHumano);
+    private static IEnumerable<Type> TodosOsTipos() => Reflexao.TiposEscritosPorHumano(Domain);
 
     private static IEnumerable<Type> TiposDoDominio() =>
         TodosOsTipos()
             .Where(tipo => tipo is { IsClass: true, IsAbstract: false } or { IsValueType: true, IsEnum: false });
 
-    private static bool EscritoPorHumano(Type tipo) =>
-        !tipo.IsNested
-        && !tipo.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false)
-        && !tipo.Name.Contains('<', StringComparison.Ordinal);
+    private static bool EstaEm(Type tipo, string prefixo) => Reflexao.EstaEm(tipo, prefixo);
 
-    private static bool EstaEm(Type tipo, string prefixo) =>
-        tipo.Namespace?.StartsWith(prefixo, StringComparison.Ordinal) == true;
-
-    private static bool TerminaEm(Type tipo, string segmento) =>
-        tipo.Namespace?.EndsWith($".{segmento}", StringComparison.Ordinal) == true;
+    private static bool TerminaEm(Type tipo, string segmento) => Reflexao.TerminaEm(tipo, segmento);
 
     private static string NomeDoContexto(Type tipo) =>
         tipo.Namespace!.Split('.').ElementAtOrDefault(3) ?? string.Empty;
@@ -134,40 +127,6 @@ public sealed class ConvencaoDePastasTests
         return false;
     }
 
-    private static IEnumerable<Type> TiposReferenciadosPor(Type tipo)
-    {
-        const BindingFlags Todos = BindingFlags.Public | BindingFlags.NonPublic
-            | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-
-        var deBase = tipo.BaseType is null ? [] : new[] { tipo.BaseType };
-        var deInterfaces = tipo.GetInterfaces();
-        var deCampos = tipo.GetFields(Todos).Select(campo => campo.FieldType);
-        var dePropriedades = tipo.GetProperties(Todos).Select(propriedade => propriedade.PropertyType);
-        var deMetodos = tipo.GetMethods(Todos)
-            .SelectMany(metodo => metodo.GetParameters()
-                .Select(parametro => parametro.ParameterType)
-                .Append(metodo.ReturnType));
-
-        return deBase
-            .Concat(deInterfaces)
-            .Concat(deCampos)
-            .Concat(dePropriedades)
-            .Concat(deMetodos)
-            .SelectMany(Desembrulhar)
-            .Where(referencia => referencia.Assembly == Domain)
-            .Distinct();
-    }
-
-    private static IEnumerable<Type> Desembrulhar(Type tipo)
-    {
-        yield return tipo;
-
-        if (tipo.IsGenericType)
-        {
-            foreach (var argumento in tipo.GetGenericArguments())
-            {
-                yield return argumento;
-            }
-        }
-    }
+    private static IEnumerable<Type> TiposReferenciadosPor(Type tipo) =>
+        Reflexao.TiposReferenciadosPor(tipo, Domain);
 }
